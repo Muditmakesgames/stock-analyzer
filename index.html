@@ -1,123 +1,113 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Personalized Stock Portfolio Analyzer</title>
-  <style>
-    body { font-family: Arial, sans-serif; background: #1e293b; color: white; margin: 0; padding: 20px; }
-    .container { max-width: 800px; margin: auto; }
-    .section { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 12px; margin-bottom: 20px; }
-    label { display: block; margin-bottom: 6px; font-weight: bold; }
-    input, select, textarea, button { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #3b82f6; background: #1e293b; color: white; }
-    button { background: #3b82f6; cursor: pointer; }
-    img { max-width: 100%; margin-top: 10px; border-radius: 8px; }
-    pre { background: #111827; padding: 15px; border-radius: 8px; overflow-x: auto; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stock Portfolio Analyzer</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; margin: 0; padding: 20px; }
+  h1 { text-align: center; color: #00ffcc; }
+  .container { max-width: 600px; margin: 0 auto; background: #162447; padding: 20px; border-radius: 10px; }
+  label { display: block; margin-top: 15px; }
+  input, select, textarea { width: 100%; padding: 10px; margin-top: 5px; border-radius: 5px; border: none; }
+  button { margin-top: 20px; width: 100%; padding: 15px; border: none; border-radius: 5px; background: #00ffcc; color: #000; font-weight: bold; cursor: pointer; }
+  img { max-width: 100%; margin-top: 15px; border-radius: 10px; }
+  pre { background: #0f0f1f; padding: 15px; border-radius: 10px; overflow-x: auto; white-space: pre-wrap; }
+</style>
 </head>
 <body>
-  <div class="container">
-    <h1>Personalized Stock Portfolio Analyzer</h1>
+<h1>Stock Portfolio Analyzer</h1>
+<div class="container">
+  <form id="analyzeForm">
+    <label>Upload Portfolio Screenshot:
+      <input type="file" id="image" accept="image/*" required>
+    </label>
 
-    <!-- Upload Section -->
-    <div class="section" id="upload-section">
-      <h2>Upload Your Portfolio Screenshot</h2>
-      <input type="file" id="image-input" accept="image/*">
-      <img id="preview" src="" alt="" style="display:none;">
-    </div>
-
-    <!-- Profile Questions -->
-    <div class="section" id="profile-section">
-      <h2>Your Investment Profile</h2>
-      <label for="timeHorizon">Time Horizon</label>
-      <select id="timeHorizon">
-        <option value="">Select timeline...</option>
-        <option value="Less than 1 year">Less than 1 year (short-term)</option>
-        <option value="1-3 years">1-3 years (medium-term)</option>
-        <option value="3-10 years">3-10 years (long-term)</option>
-        <option value="10+ years">10+ years (retirement/legacy)</option>
+    <label>Time Horizon:
+      <select id="timeHorizon" required>
+        <option value="">Select...</option>
+        <option value="Less than 1 year">Less than 1 year</option>
+        <option value="1-3 years">1-3 years</option>
+        <option value="3-10 years">3-10 years</option>
+        <option value="10+ years">10+ years</option>
       </select>
+    </label>
 
-      <label for="riskTolerance">Risk Tolerance</label>
-      <select id="riskTolerance">
-        <option value="">Select risk comfort...</option>
-        <option value="Conservative">Conservative - I lose sleep over 10% drops</option>
-        <option value="Moderate">Moderate - I can handle some ups and downs</option>
-        <option value="Aggressive">Aggressive - I'm comfortable with significant volatility</option>
-        <option value="Very Aggressive">Very Aggressive - Volatility doesn't bother me</option>
+    <label>Risk Tolerance:
+      <select id="riskTolerance" required>
+        <option value="">Select...</option>
+        <option value="Conservative">Conservative</option>
+        <option value="Moderate">Moderate</option>
+        <option value="Aggressive">Aggressive</option>
+        <option value="Very Aggressive">Very Aggressive</option>
       </select>
+    </label>
 
-      <label for="goals">Investment Goals</label>
-      <textarea id="goals" placeholder="E.g., retirement, saving for a house..."></textarea>
+    <label>Goals:
+      <textarea id="goals" placeholder="E.g., retirement, buying a house, building wealth" required></textarea>
+    </label>
 
-      <label for="concerns">Specific Concerns (Optional)</label>
-      <textarea id="concerns" placeholder="E.g., worried about tech concentration..."></textarea>
+    <label>Concerns (Optional):
+      <textarea id="concerns" placeholder="E.g., tech concentration, market highs"></textarea>
+    </label>
 
-      <button id="analyzeBtn">Analyze Portfolio</button>
-    </div>
+    <button type="submit">Analyze Portfolio</button>
+  </form>
 
-    <!-- Analysis Results -->
-    <div class="section" id="results-section" style="display:none;">
-      <h2>Analysis Results</h2>
-      <pre id="analysis"></pre>
-    </div>
-  </div>
+  <pre id="result"></pre>
+</div>
 
-  <script>
-    const imageInput = document.getElementById("image-input");
-    const preview = document.getElementById("preview");
-    const analyzeBtn = document.getElementById("analyzeBtn");
-    const analysisContainer = document.getElementById("results-section");
-    const analysisText = document.getElementById("analysis");
+<script>
+  const form = document.getElementById("analyzeForm");
+  const result = document.getElementById("result");
 
-    let selectedFile = null;
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    result.textContent = "Analyzing portfolio...";
 
-    imageInput.addEventListener("change", e => {
-      selectedFile = e.target.files[0];
-      if(selectedFile) {
-        const reader = new FileReader();
-        reader.onload = () => {
-          preview.src = reader.result;
-          preview.style.display = "block";
-        }
-        reader.readAsDataURL(selectedFile);
+    const imageFile = document.getElementById("image").files[0];
+    const timeHorizon = document.getElementById("timeHorizon").value;
+    const riskTolerance = document.getElementById("riskTolerance").value;
+    const goals = document.getElementById("goals").value;
+    const concerns = document.getElementById("concerns").value;
+
+    if (!imageFile) {
+      result.textContent = "Please upload an image.";
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("image", imageFile);
+    formData.append("timeHorizon", timeHorizon);
+    formData.append("riskTolerance", riskTolerance);
+    formData.append("goals", goals);
+    formData.append("concerns", concerns);
+
+    try {
+      const response = await fetch("/api/analyze", {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (data.analysisText) {
+        result.textContent = data.analysisText;
+      } else if (data.error) {
+        result.textContent = "Error: " + data.error;
+      } else {
+        result.textContent = "Unknown error occurred.";
       }
-    });
 
-    analyzeBtn.addEventListener("click", async () => {
-      const timeHorizon = document.getElementById("timeHorizon").value;
-      const riskTolerance = document.getElementById("riskTolerance").value;
-      const goals = document.getElementById("goals").value;
-      const concerns = document.getElementById("concerns").value;
-
-      if(!selectedFile || !timeHorizon || !riskTolerance || !goals){
-        alert("Please upload an image and fill out all required fields.");
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append("image", selectedFile);
-      formData.append("timeHorizon", timeHorizon);
-      formData.append("riskTolerance", riskTolerance);
-      formData.append("goals", goals);
-      formData.append("concerns", concerns);
-
-      analysisText.textContent = "Analyzing... please wait.";
-      analysisContainer.style.display = "block";
-
-      try {
-        const response = await fetch("/api/analyze", {
-          method: "POST",
-          body: formData
-        });
-        const data = await response.json();
-        analysisText.textContent = data.analysis || "No response from AI.";
-      } catch (err) {
-        analysisText.textContent = "Error analyzing portfolio.";
-        console.error(err);
-      }
-    });
-  </script>
+    } catch (err) {
+      console.error(err);
+      result.textContent = "Network error: " + err.message;
+    }
+  });
+</script>
 </body>
 </html>
+
+
+
+
