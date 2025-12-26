@@ -1,12 +1,16 @@
-import formidable from "formidable";
-import fs from "fs";
-import fetch from "node-fetch";
+const formidable = require("formidable");
+const fs = require("fs");
+const fetch = require("node-fetch");
 
-export const config = {
-  api: { bodyParser: false } // needed for file uploads
+module.exports.config = {
+  api: { bodyParser: false } // required for file uploads
 };
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
+
   const form = new formidable.IncomingForm();
 
   form.parse(req, async (err, fields, files) => {
@@ -20,10 +24,10 @@ export default async function handler(req, res) {
     }
 
     try {
-      // Convert image to base64
+      // Convert uploaded image to base64
       const imageData = fs.readFileSync(imageFile.filepath, { encoding: "base64" });
 
-      // Call OpenAI API
+      // Call OpenAI Chat Completion API
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -35,16 +39,14 @@ export default async function handler(req, res) {
           messages: [
             {
               role: "user",
-              content: `Analyze this stock portfolio based on the user's profile. Include detailed, step-by-step recommendations for each stock. Respond specifically for this portfolio image.
+              content: `Analyze this stock portfolio based on the user's profile. Provide very detailed, step-by-step recommendations. Respond specifically for this portfolio image.
 
 Time Horizon: ${timeHorizon}
 Risk Tolerance: ${riskTolerance}
 Goals: ${goals}
 Concerns: ${concerns}
 
-Image (base64): ${imageData}
-
-Give a clear, detailed, actionable analysis for this individual portfolio.`
+Image (base64): ${imageData}`
             }
           ],
           max_tokens: 3000
@@ -61,5 +63,7 @@ Give a clear, detailed, actionable analysis for this individual portfolio.`
       res.status(500).json({ error: "Failed to analyze portfolio." });
     }
   });
-}
+};
+
+
 
