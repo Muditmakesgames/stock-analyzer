@@ -3,7 +3,7 @@ const fs = require("fs");
 const fetch = require("node-fetch");
 
 module.exports.config = {
-  api: { bodyParser: false } // required for file uploads
+  api: { bodyParser: false }
 };
 
 module.exports = async function handler(req, res) {
@@ -19,15 +19,11 @@ module.exports = async function handler(req, res) {
     const { timeHorizon, riskTolerance, goals, concerns } = fields;
     const imageFile = files.image;
 
-    if (!imageFile) {
-      return res.status(400).json({ error: "No image uploaded." });
-    }
+    if (!imageFile) return res.status(400).json({ error: "No image uploaded." });
 
     try {
-      // Convert uploaded image to base64
       const imageData = fs.readFileSync(imageFile.filepath, { encoding: "base64" });
 
-      // Call OpenAI Chat Completion API
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -39,13 +35,12 @@ module.exports = async function handler(req, res) {
           messages: [
             {
               role: "user",
-              content: `Analyze this stock portfolio based on the user's profile. Provide very detailed, step-by-step recommendations. Respond specifically for this portfolio image.
+              content: `Analyze this stock portfolio image (base64) based on profile below. Provide very detailed, step-by-step recommendations for each stock.
 
 Time Horizon: ${timeHorizon}
 Risk Tolerance: ${riskTolerance}
 Goals: ${goals}
 Concerns: ${concerns}
-
 Image (base64): ${imageData}`
             }
           ],
@@ -56,7 +51,7 @@ Image (base64): ${imageData}`
       const data = await response.json();
       const analysis = data.choices?.[0]?.message?.content || "No response from AI.";
 
-      res.status(200).json({ analysis });
+      res.status(200).json({ analysisText: analysis });
 
     } catch (error) {
       console.error(error);
@@ -64,6 +59,7 @@ Image (base64): ${imageData}`
     }
   });
 };
+
 
 
 
