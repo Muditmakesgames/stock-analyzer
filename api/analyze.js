@@ -1,4 +1,3 @@
-
 const formidable = require("formidable");
 const fs = require("fs");
 const fetch = require("node-fetch");
@@ -6,39 +5,24 @@ const fetch = require("node-fetch");
 module.exports.config = { api: { bodyParser: false } };
 
 module.exports = async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
+  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-  // ✅ Check if OpenAI key exists
   console.log("OPENAI_API_KEY exists?", !!process.env.OPENAI_API_KEY);
-  if (!process.env.OPENAI_API_KEY) {
-    return res.status(500).json({ error: "OpenAI API key missing" });
-  }
+  if (!process.env.OPENAI_API_KEY) return res.status(500).json({ error: "OpenAI API key missing" });
 
   const form = new formidable.IncomingForm();
 
   form.parse(req, async (err, fields, files) => {
-    if (err) {
-      console.error("Form parse error:", err);
-      return res.status(500).json({ error: "Form parsing failed" });
-    }
+    if (err) return res.status(500).json({ error: "Form parsing failed" });
 
     const { timeHorizon, riskTolerance, goals, concerns } = fields;
     const imageFile = files.image;
 
-    console.log("Received fields:", fields);
-    console.log("Received file:", imageFile?.originalFilename);
-
-    if (!imageFile) {
-      return res.status(400).json({ error: "No image uploaded" });
-    }
+    if (!imageFile) return res.status(400).json({ error: "No image uploaded" });
 
     try {
-      // Convert image to base64
       const imageData = fs.readFileSync(imageFile.filepath, { encoding: "base64" });
 
-      // Call OpenAI
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -50,30 +34,22 @@ module.exports = async function handler(req, res) {
           messages: [
             {
               role: "user",
-              content: `Analyze this stock portfolio image (base64) and give detailed, step-by-step recommendations.
-
-Time Horizon: ${timeHorizon}
-Risk Tolerance: ${riskTolerance}
-Goals: ${goals}
-Concerns: ${concerns}
-Image (base64): ${imageData}`
+              content: `Analyze this portfolio image (base64) with Time Horizon: ${timeHorizon}, Risk: ${riskTolerance}, Goals: ${goals}, Concerns: ${concerns}.`
             }
           ],
           max_tokens: 3000
         })
       });
 
-      // Handle OpenAI errors safely
+      // If OpenAI fails, read text safely
       if (!response.ok) {
         const text = await response.text();
-        console.error("OpenAI error response:", text);
+        console.error("OpenAI error:", text);
         return res.status(response.status).json({ error: text });
       }
 
       const data = await response.json();
       const analysis = data.choices?.[0]?.message?.content || "No response from AI.";
-
-      // ✅ Always return JSON
       res.status(200).json({ analysisText: analysis });
 
     } catch (error) {
